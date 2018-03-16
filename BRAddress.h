@@ -34,9 +34,6 @@
 extern "C" {
 #endif
 
-#if VERTCOIN_TESTNET
-#pragma message "testnet build"
-#endif
 
 // bitcoin address prefixes
 #define VERTCOIN_PUBKEY_ADDRESS      46

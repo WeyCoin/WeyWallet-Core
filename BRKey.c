@@ -131,11 +131,9 @@ int BRPrivKeyIsValid(const char *privKey)
     strLen = strlen(privKey);
 
     if (dataLen == 33 || dataLen == 34) { // wallet import format: https://en.bitcoin.it/wiki/Wallet_import_format
-#if VERTCOIN_TESTNET
-        r = (data[0] == VERTCOIN_PRIVKEY_TEST);
-#else
+
         r = (data[0] == VERTCOIN_PRIVKEY);
-#endif
+
     }
     else if ((strLen == 30 || strLen == 22) && privKey[0] == 'S') { // mini private key format
         char s[strLen + 2];
@@ -173,9 +171,6 @@ int BRKeySetPrivKey(BRKey *key, const char *privKey)
     uint8_t data[34], version = VERTCOIN_PRIVKEY;
     int r = 0;
 
-#if VERTCOIN_TESTNET
-    version = VERTCOIN_PRIVKEY_TEST;
-#endif
 
     assert(key != NULL);
     assert(privKey != NULL);
@@ -234,9 +229,6 @@ size_t BRKeyPrivKey(const BRKey *key, char *privKey, size_t pkLen)
 
     if (secp256k1_ec_seckey_verify(_ctx, key->secret.u8)) {
         data[0] = VERTCOIN_PRIVKEY;
-#if VERTCOIN_TESTNET
-        data[0] = VERTCOIN_PRIVKEY_TEST;
-#endif
 
         UInt256Set(&data[1], key->secret);
         if (key->compressed) data[33] = 0x01;
@@ -293,9 +285,7 @@ size_t BRKeyAddress(BRKey *key, char *addr, size_t addrLen)
 
     hash = BRKeyHash160(key);
     data[0] = VERTCOIN_PUBKEY_ADDRESS;
-#if VERTCOIN_TESTNET
-    data[0] = VERTCOIN_PUBKEY_ADDRESS_TEST;
-#endif
+
     UInt160Set(&data[1], hash);
 
     if (! UInt160IsZero(hash)) {
