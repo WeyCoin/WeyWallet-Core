@@ -46,13 +46,7 @@
 #define GENESIS_BLOCK_HASH    (UInt256Reverse(u256_hex_decode(checkpoint_array[0].hash)))
 #define PEER_FLAG_SYNCED      0x01
 #define PEER_FLAG_NEEDSUPDATE 0x02
-// Since there's no DNS Seeds on testnet yet, using known testnet peers
-static const char *testnet_peers[] = {
-    "tvtc.blkidx.org",
-    "jlovejoy.mit.edu",
-    "10.200.0.1",
-    NULL
-};
+
 
 static const struct { uint32_t height; const char *hash; uint32_t timestamp; uint32_t target; } checkpoint_array[] = {
     {        0,      "000006ed0805a3f7db7c1430e73d52bdc1c3bbc278f3534117d8a0e4c86b88a5", 1516483599, 0x1e0ffff0 },
@@ -744,6 +738,7 @@ static void _BRPeerManagerFindPeers(BRPeerManager *manager)
     pthread_attr_t attr;
     UInt128 *addr, *addrList;
     BRFindPeersInfo *info;
+
 
     if (! UInt128IsZero(manager->fixedPeer.address)) {
         array_set_count(manager->peers, 1);
