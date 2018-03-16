@@ -47,7 +47,7 @@ extern "C" {
 #define TXIN_SEQUENCE        UINT32_MAX  // sequence number for a finalized tx input
 
 #define SATOSHIS             100000000LL
-#define MAX_MONEY            (21000000LL*SATOSHIS)
+#define MAX_MONEY            (256000000LL*SATOSHIS)
 
 #define BR_RAND_MAX          ((RAND_MAX > 0x7fffffff) ? 0x7fffffff : RAND_MAX)
 
@@ -57,7 +57,7 @@ uint32_t BRRand(uint32_t upperBound);
 typedef struct {
     UInt256 txHash;
     uint32_t index;
-    char address[75];
+    char address[36];
     uint64_t amount;
     uint8_t *script;
     size_t scriptLen;
@@ -71,7 +71,7 @@ void BRTxInputSetScript(BRTxInput *input, const uint8_t *script, size_t scriptLe
 void BRTxInputSetSignature(BRTxInput *input, const uint8_t *signature, size_t sigLen);
 
 typedef struct {
-    char address[75];
+    char address[36];
     uint64_t amount;
     uint8_t *script;
     size_t scriptLen;
@@ -98,9 +98,6 @@ typedef struct {
 // returns a newly allocated empty transaction that must be freed by calling BRTransactionFree()
 BRTransaction *BRTransactionNew(void);
 
-// returns a deep copy of tx and that must be freed by calling BRTransactionFree()
-BRTransaction *BRTransactionCopy(const BRTransaction *tx);
-
 // buf must contain a serialized tx
 // retruns a transaction that must be freed by calling BRTransactionFree()
 BRTransaction *BRTransactionParse(const uint8_t *buf, size_t bufLen);
@@ -122,7 +119,7 @@ void BRTransactionShuffleOutputs(BRTransaction *tx);
 
 // size in bytes if signed, or estimated size assuming compact pubkey sigs
 size_t BRTransactionSize(const BRTransaction *tx);
-    
+
 // minimum transaction fee needed for tx to relay across the bitcoin network
 uint64_t BRTransactionStandardFee(const BRTransaction *tx);
 
@@ -130,7 +127,7 @@ uint64_t BRTransactionStandardFee(const BRTransaction *tx);
 int BRTransactionIsSigned(const BRTransaction *tx);
 
 // adds signatures to any inputs with NULL signatures that can be signed with any keys
-// forkId is 0 for bitcoin, 0x40 for b-cash, 0x4f for b-gold
+// forkId is 0 for bitcoin, 0x40 for b-cash
 // returns true if tx is signed
 int BRTransactionSign(BRTransaction *tx, int forkId, BRKey keys[], size_t keysCount);
 

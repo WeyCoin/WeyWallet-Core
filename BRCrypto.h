@@ -28,7 +28,6 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <inttypes.h>
-#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,12 +52,6 @@ void BRRMD160(void *md20, const void *data, size_t len);
 
 // bitcoin hash-160 = ripemd-160(sha-256(x))
 void BRHash160(void *md20, const void *data, size_t len);
-
-// sha3-256: http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
-void BRSHA3_256(void *md32, const void *data, size_t len);
-
-// keccak-256: https://keccak.team/files/Keccak-submission-3.pdf
-void BRKeccak256(void *md32, const void *data, size_t len);
 
 // md5 - for non-cryptographic use only
 void BRMD5(void *md16, const void *data, size_t len);
@@ -95,6 +88,12 @@ void BRPBKDF2(void *dk, size_t dkLen, void (*hash)(void *, const void *, size_t)
 // scrypt key derivation: http://www.tarsnap.com/scrypt.html
 void BRScrypt(void *dk, size_t dkLen, const void *pw, size_t pwLen, const void *salt, size_t saltLen,
               unsigned n, unsigned r, unsigned p);
+    
+void BRScryptN(const char* input, char* output, uint32_t len);
+    
+void BRLyra2(const char* input, char* output);
+    
+void BRLyra2REv2(const char* input, char* output);
 
 // zeros out memory in a way that can't be optimized out by the compiler
 inline static void mem_clean(void *ptr, size_t len)
