@@ -50,7 +50,6 @@
 
 static const struct { uint32_t height; const char *hash; uint32_t timestamp; uint32_t target; } checkpoint_array[] = {
     {        0,      "000006ed0805a3f7db7c1430e73d52bdc1c3bbc278f3534117d8a0e4c86b88a5", 1516483599, 0x1e0ffff0 },
-    {        256,    "00000000a334c739f1ae1f23f7d996fe6c95b247dc8de83cf92ae73f110d5317", 1517687945, 0x1d017b9d },
     {        12500,  "0000000003f5ad275187245b3c0eb1ffe5cfb26109d0939f1fade2c2f5c219fe", 1517950303, 0x1c4c874b },
     {        16000,  "0000000011120f00c57a0df89cd2d3dc05b61f52243ab27d0a83b4acae2221ce", 1518024836, 0x1c4b509f },
     {        55000,  "000000007647c73e8731967b37a8e71358daeb16084a18781238a5b7e7483d16", 1518862499, 0x1d00d4ee },
