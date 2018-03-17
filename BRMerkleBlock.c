@@ -31,9 +31,8 @@
 #include <string.h>
 #include <assert.h>
 
-#define MAX_PROOF_OF_WORK 0x1e0ffff0    // highest value for difficulty target (higher values are less difficult)
-#define TARGET_TIMESPAN   (5 * 60) // the targeted timespan between difficulty target adjustments
-#define TARGET_SPACING    20
+#define MAX_PROOF_OF_WORK 0x1e0fffff0    // highest value for difficulty target (higher values are less difficult)
+#define TARGET_TIMESPAN (5 * 60) // the targeted timespan between difficulty target adjustments
 
 inline static int _ceil_log2(int x)
 {
@@ -124,13 +123,13 @@ BRMerkleBlock *BRMerkleBlockParse(const uint8_t *buf, size_t bufLen)
         }
 
         BRSHA256_2(&block->blockHash, buf, 80);
-    }
 
-    BRLyra2REv2(buf, &block->powHash);
+        BRLyra2REv2(&block->powHash, buf);
+
+    }
 
     return block;
 }
-
 
 // returns number of bytes written to buf, or total bufLen needed if buf is NULL (block->height is not serialized)
 size_t BRMerkleBlockSerialize(const BRMerkleBlock *block, uint8_t *buf, size_t bufLen)
@@ -270,23 +269,36 @@ int BRMerkleBlockIsValid(const BRMerkleBlock *block, uint32_t currentTime)
     int r = 1;
 
     // check if merkle root is correct
-    if (block->totalTx > 0 && ! UInt256Eq(merkleRoot, block->merkleRoot)) r = 0;
+    if (block->totalTx > 0 && ! UInt256Eq(merkleRoot, block->merkleRoot)) {
+        r = 0;
+
+        wey_log("invalid merkleRoot: %s - %s", u256_hex_encode(merkleRoot), u256_hex_encode(block->merkleRoot));
+    }
 
     // check if timestamp is too far in future
-    if (block->timestamp > currentTime + BLOCK_MAX_TIME_DRIFT) r = 0;
+    if (block->timestamp > currentTime + BLOCK_MAX_TIME_DRIFT) {
+        r = 0;
 
-    return r;
+        wey_log("timestamp too far in future for block (%s, height = %d): %d - %d", u256_hex_encode(block->blockHash), block->height, block->timestamp, (currentTime + BLOCK_MAX_TIME_DRIFT));
+    }
 
-    // TODO this check fails.
     // check if proof-of-work target is out of range
-    if (target == 0 || target & 0x00800000 || size > maxsize || (size == maxsize && target > maxtarget)) r = 0;
+    if (target == 0 || target & 0x00800000 || size > maxsize || (size == maxsize && target > maxtarget)) {
+        r = 0;
+
+        wey_log("target is out of range: %x - %x - %x - %x", target, maxtarget, size, maxsize);
+    }
 
     if (size > 3) UInt32SetLE(&t.u8[size - 3], target);
     else UInt32SetLE(t.u8, target >> (3 - size)*8);
 
     for (int i = sizeof(t) - 1; r && i >= 0; i--) { // check proof-of-work
         if (block->powHash.u8[i] < t.u8[i]) break;
-        if (block->powHash.u8[i] > t.u8[i]) r = 0;
+        if (block->powHash.u8[i] > t.u8[i]) {
+            r = 0;
+
+            wey_log("invalid blockHash[%d]: %x - %x", i, block->powHash.u8[i], t.u8[i]);
+        }
     }
 
     return r;
@@ -321,9 +333,6 @@ int BRMerkleBlockContainsTxHash(const BRMerkleBlock *block, UInt256 txHash)
 int BRMerkleBlockVerifyDifficulty(const BRMerkleBlock *block, const BRMerkleBlock *previous, uint32_t transitionTime)
 {
     int r = 1;
-    return r;
-
-    // TODO: Implement difficulty check
 
     assert(block != NULL);
     assert(previous != NULL);
@@ -331,7 +340,13 @@ int BRMerkleBlockVerifyDifficulty(const BRMerkleBlock *block, const BRMerkleBloc
     if (! previous || !UInt256Eq(block->prevBlock, previous->blockHash) || block->height != previous->height + 1) r = 0;
     if (r && (block->height % BLOCK_DIFFICULTY_INTERVAL) == 0 && transitionTime == 0) r = 0;
 
-    if (r && (block->height % BLOCK_DIFFICULTY_INTERVAL) == 0) {
+#if BITCOIN_TESTNET
+    // TODO: implement testnet difficulty rule check
+    return r; // don't worry about difficulty on testnet for now
+#endif
+
+    // TODO: fix difficulty target check for Digibyte
+    /*if (r && (block->height % BLOCK_DIFFICULTY_INTERVAL) == 0) {
         // target is in "compact" format, where the most significant byte is the size of resulting value in bytes, next
         // bit is the sign, and the remaining 23bits is the value after having been right shifted by (size - 3)*8 bits
         static const uint32_t maxsize = MAX_PROOF_OF_WORK >> 24, maxtarget = MAX_PROOF_OF_WORK & 0x00ffffff;
@@ -355,7 +370,7 @@ int BRMerkleBlockVerifyDifficulty(const BRMerkleBlock *block, const BRMerkleBloc
 
         if (block->target != ((uint32_t)target | size << 24)) r = 0;
     }
-    else if (r && block->target != previous->target) r = 0;
+    else if (r && block->target != previous->target) r = 0;*/
 
     return r;
 }

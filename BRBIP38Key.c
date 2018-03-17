@@ -90,26 +90,26 @@ static const uint8_t sboxi[256] = {
 static void _BRAES256ECBEncrypt(const void *key32, void *buf16)
 {
     size_t i, j;
-    uint32_t _k[32/4], _x[16/4];
-    uint8_t *x = (uint8_t *)_x, *k = (uint8_t *)_k, r = 1, a, b, c, d, e;
-    
-    memcpy(_k, key32, sizeof(_k));
-    memcpy(_x, buf16, sizeof(_x));
-    
+    uint32_t key[32/4], buf[16/4];
+    uint8_t *x = (uint8_t *)buf, *k = (uint8_t *)key, r = 1, a, b, c, d, e;
+
+    memcpy(key, key32, sizeof(key));
+    memcpy(buf, buf16, sizeof(buf));
+
     for (i = 0; i < 14; i++) {
-        for (j = 0; j < 4; j++) _x[j] ^= _k[j+(i & 1)*4]; // add round key
-        
+        for (j = 0; j < 4; j++) buf[j] ^= key[j+(i & 1)*4]; // add round key
+
         for (j = 0; j < 16; j++) x[j] = sbox[x[j]]; // sub bytes
-        
+
         // shift rows
         a = x[1], x[1] = x[5], x[5] = x[9], x[9] = x[13], x[13] = a, a = x[10], x[10] = x[2], x[2] = a;
         a = x[3], x[3] = x[15], x[15] = x[11], x[11] = x[7], x[7] = a, a = x[14], x[14] = x[6], x[6] = a;
-        
+
         for (j = 0; i < 13 && j < 16; j += 4) { // mix columns
             a = x[j], b = x[j+1], c = x[j+2], d = x[j+3], e = a ^ b ^ c ^ d;
             x[j] ^= e ^ xt(a ^ b), x[j+1] ^= e ^ xt(b ^ c), x[j+2] ^= e ^ xt(c ^ d), x[j+3] ^= e ^ xt(d ^ a);
         }
-        
+
         if ((i % 2) != 0) { // expand key
             k[0] ^= sbox[k[29]] ^ r, k[1] ^= sbox[k[30]], k[2] ^= sbox[k[31]], k[3] ^= sbox[k[28]], r = xt(r);
             for (j = 4; j < 16; j += 4) k[j] ^= k[j-4], k[j+1] ^= k[j-3], k[j+2] ^= k[j-2], k[j+3] ^= k[j-1];
@@ -117,45 +117,45 @@ static void _BRAES256ECBEncrypt(const void *key32, void *buf16)
             for (j = 20; j < 32; j += 4) k[j] ^= k[j-4], k[j+1] ^= k[j-3], k[j+2] ^= k[j-2], k[j+3] ^= k[j-1];
         }
     }
-    
+
     var_clean(&r, &a, &b, &c, &d, &e);
-    for (i = 0; i < 4; i++) _x[i] ^= _k[i]; // final add round key
-    mem_clean(_k, sizeof(_k));
-    memcpy(buf16, _x, sizeof(_x));
-    mem_clean(_x, sizeof(_x));
+    for (i = 0; i < 4; i++) buf[i] ^= key[i]; // final add round key
+    mem_clean(key, sizeof(key));
+    memcpy(buf16, buf, sizeof(buf));
+    mem_clean(buf, sizeof(buf));
 }
 
 static void _BRAES256ECBDecrypt(const void *key32, void *buf16)
 {
     size_t i, j;
-    uint32_t _k[32/4], _x[16/4];
-    uint8_t *x = (uint8_t *)_x, *k = (uint8_t *)_k, r = 1, a, b, c, d, e, f, g, h;
-    
-    memcpy(_k, key32, sizeof(_k));
-    memcpy(_x, buf16, sizeof(_x));
-    
+    uint32_t key[32/4], buf[16/4];
+    uint8_t *x = (uint8_t *)buf, *k = (uint8_t *)key, r = 1, a, b, c, d, e, f, g, h;
+
+    memcpy(key, key32, sizeof(key));
+    memcpy(buf, buf16, sizeof(buf));
+
     for (i = 0; i < 7; i++) { // expand key
         k[0] ^= sbox[k[29]] ^ r, k[1] ^= sbox[k[30]], k[2] ^= sbox[k[31]], k[3] ^= sbox[k[28]], r = xt(r);
         for (j = 4; j < 16; j += 4) k[j] ^= k[j-4], k[j+1] ^= k[j-3], k[j+2] ^= k[j-2], k[j+3] ^= k[j-1];
         k[16] ^= sbox[k[12]], k[17] ^= sbox[k[13]], k[18] ^= sbox[k[14]], k[19] ^= sbox[k[15]];
         for (j = 20; j < 32; j += 4) k[j] ^= k[j-4], k[j+1] ^= k[j-3], k[j+2] ^= k[j-2], k[j+3] ^= k[j-1];
     }
-    
+
     for (i = 0; i < 14; i++) {
-        for (j = 0; j < 4; j++) _x[j] ^= _k[j+(i & 1)*4]; // add round key
-        
+        for (j = 0; j < 4; j++) buf[j] ^= key[j+(i & 1)*4]; // add round key
+
         for (j = 0; i > 0 && j < 16; j += 4) { // unmix columns
             a = x[j], b = x[j+1], c = x[j+2], d = x[j+3], e = a ^ b ^ c ^ d;
             h = xt(e), f = e ^ xt(xt(h ^ a ^ c)), g = e ^ xt(xt(h ^ b ^ d));
             x[j] ^= f ^ xt(a ^ b), x[j+1] ^= g ^ xt(b ^ c), x[j+2] ^= f ^ xt(c ^ d), x[j+3] ^= g ^ xt(d ^ a);
         }
-        
+
         // unshift rows
         a = x[1], x[1] = x[13], x[13] = x[9], x[9] = x[5], x[5] = a, a = x[2], x[2] = x[10], x[10] = a;
         a = x[3], x[3] = x[7], x[7] = x[11], x[11] = x[15], x[15] = a, a = x[6], x[6] = x[14], x[14] = a;
-        
+
         for (j = 0; j < 16; j++) x[j] = sboxi[x[j]]; // unsub bytes
-        
+
         if ((i % 2) == 0) { // unexpand key
             for (j = 28; j > 16; j -= 4) k[j] ^= k[j-4], k[j+1] ^= k[j-3], k[j+2] ^= k[j-2], k[j+3] ^= k[j-1];
             k[16] ^= sbox[k[12]], k[17] ^= sbox[k[13]], k[18] ^= sbox[k[14]], k[19] ^= sbox[k[15]];
@@ -164,22 +164,22 @@ static void _BRAES256ECBDecrypt(const void *key32, void *buf16)
             k[0] ^= sbox[k[29]] ^ r, k[1] ^= sbox[k[30]], k[2] ^= sbox[k[31]], k[3] ^= sbox[k[28]];
         }
     }
-    
+
     var_clean(&r, &a, &b, &c, &d, &e, &f, &g, &h);
-    for (i = 0; i < 4; i++) _x[i] ^= _k[i]; // final add round key
-    mem_clean(_k, sizeof(_k));
-    memcpy(buf16, _x, sizeof(_x));
-    mem_clean(_x, sizeof(_x));
+    for (i = 0; i < 4; i++) buf[i] ^= key[i]; // final add round key
+    mem_clean(key, sizeof(key));
+    memcpy(buf16, buf, sizeof(buf));
+    mem_clean(buf, sizeof(buf));
 }
 
 static UInt256 _BRBIP38DerivePassfactor(uint8_t flag, const uint8_t *entropy, const char *passphrase)
 {
     size_t len = strlen(passphrase);
     UInt256 prefactor, passfactor;
-    
+
     BRScrypt(&prefactor, sizeof(prefactor), passphrase, len, entropy, (flag & BIP38_LOTSEQUENCE_FLAG) ? 4 : 8,
              BIP38_SCRYPT_N, BIP38_SCRYPT_R, BIP38_SCRYPT_P);
-    
+
     if (flag & BIP38_LOTSEQUENCE_FLAG) { // passfactor = SHA256(SHA256(prefactor + entropy))
         uint8_t d[sizeof(prefactor) + sizeof(uint64_t)];
 
@@ -189,7 +189,7 @@ static UInt256 _BRBIP38DerivePassfactor(uint8_t flag, const uint8_t *entropy, co
         mem_clean(d, sizeof(d));
     }
     else passfactor = prefactor;
-    
+
     var_clean(&len);
     var_clean(&prefactor);
     return passfactor;
@@ -199,7 +199,7 @@ static UInt512 _BRBIP38DeriveKey(BRECPoint passpoint, const uint8_t *addresshash
 {
     UInt512 dk;
     uint8_t salt[sizeof(uint32_t) + sizeof(uint64_t)];
-    
+
     memcpy(salt, addresshash, sizeof(uint32_t));
     memcpy(&salt[sizeof(uint32_t)], entropy, sizeof(uint64_t)); // salt = addresshash + entropy
     BRScrypt(&dk, sizeof(dk), &passpoint, sizeof(passpoint), salt, sizeof(salt), BIP38_SCRYPT_EC_N, BIP38_SCRYPT_EC_R,
@@ -211,14 +211,14 @@ static UInt512 _BRBIP38DeriveKey(BRECPoint passpoint, const uint8_t *addresshash
 int BRBIP38KeyIsValid(const char *bip38Key)
 {
     uint8_t data[39];
-    
+
     assert(bip38Key != NULL);
-    
+
     if (BRBase58CheckDecode(data, sizeof(data), bip38Key) != 39) return 0; // invalid length
-    
+
     uint16_t prefix = UInt16GetBE(data);
     uint8_t flag = data[2];
-    
+
     if (prefix == BIP38_NOEC_PREFIX) { // non EC multiplied key
         return ((flag & BIP38_NOEC_FLAG) == BIP38_NOEC_FLAG && (flag & BIP38_LOTSEQUENCE_FLAG) == 0 &&
                 (flag & BIP38_INVALID_FLAG) == 0);
@@ -235,13 +235,13 @@ int BRKeySetBIP38Key(BRKey *key, const char *bip38Key, const char *passphrase)
 {
     int r = 1;
     uint8_t data[39];
-    
+
     assert(key != NULL);
     assert(bip38Key != NULL);
     assert(passphrase != NULL);
-    
+
     if (BRBase58CheckDecode(data, sizeof(data), bip38Key) != 39) return 0; // invalid length
-    
+
     uint16_t prefix = UInt16GetBE(data);
     uint8_t flag = data[2];
     const uint8_t *addresshash = &data[3];
@@ -258,11 +258,11 @@ int BRKeySetBIP38Key(BRKey *key, const char *bip38Key, const char *passphrase)
                  BIP38_SCRYPT_N, BIP38_SCRYPT_R, BIP38_SCRYPT_P);
         derived1 = *(UInt256 *)&derived, derived2 = *(UInt256 *)&derived.u64[4];
         var_clean(&derived);
-        
+
         _BRAES256ECBDecrypt(&derived2, &encrypted1);
         secret.u64[0] = encrypted1.u64[0] ^ derived1.u64[0];
         secret.u64[1] = encrypted1.u64[1] ^ derived1.u64[1];
-        
+
         _BRAES256ECBDecrypt(&derived2, &encrypted2);
         secret.u64[2] = encrypted2.u64[0] ^ derived1.u64[2];
         secret.u64[3] = encrypted2.u64[1] ^ derived1.u64[3];
@@ -276,7 +276,7 @@ int BRKeySetBIP38Key(BRKey *key, const char *bip38Key, const char *passphrase)
         UInt256 passfactor = _BRBIP38DerivePassfactor(flag, entropy, passphrase), factorb;
         BRECPoint passpoint;
         uint64_t seedb[3];
-        
+
         BRSecp256k1PointGen(&passpoint, &passfactor); // passpoint = G*passfactor
         derived = _BRBIP38DeriveKey(passpoint, addresshash, entropy);
         var_clean(&passpoint);
@@ -295,14 +295,14 @@ int BRKeySetBIP38Key(BRKey *key, const char *bip38Key, const char *passphrase)
         seedb[1] = encrypted1.u64[1] ^ derived1.u64[1];
         var_clean(&derived1, &derived2);
         var_clean(&encrypted1, &encrypted2);
-        
+
         BRSHA256_2(&factorb, seedb, sizeof(seedb)); // factorb = SHA256(SHA256(seedb))
         mem_clean(seedb, sizeof(seedb));
         secret = passfactor;
         BRSecp256k1ModMul(&secret, &factorb); // secret = passfactor*factorb mod N
         var_clean(&passfactor, &factorb);
     }
-    
+
     BRKeySetSecret(key, &secret, flag & BIP38_COMPRESSED_FLAG);
     var_clean(&secret);
     BRKeyAddress(key, address.s, sizeof(address));
@@ -352,12 +352,12 @@ size_t BRKeyBIP38Key(BRKey *key, char *bip38Key, size_t bip38KeyLen, const char 
     UInt512 derived;
     UInt256 hash, derived1, derived2;
     UInt128 encrypted1, encrypted2;
-    
+
     if (! bip38Key) return 43*138/100 + 2; // 43bytes*log(256)/log(58), rounded up, plus NULL terminator
 
     assert(key != NULL);
     assert(passphrase != NULL);
-   
+
     if (key->compressed) flag |= BIP38_COMPRESSED_FLAG;
     BRKeyAddress(key, address.s, sizeof(address));
     BRSHA256_2(&hash, address.s, strlen(address.s));
@@ -367,7 +367,7 @@ size_t BRKeyBIP38Key(BRKey *key, char *bip38Key, size_t bip38KeyLen, const char 
              BIP38_SCRYPT_N, BIP38_SCRYPT_R, BIP38_SCRYPT_P);
     derived1 = *(UInt256 *)&derived, derived2 = *(UInt256 *)&derived.u64[4];
     var_clean(&derived);
-    
+
     // enctryped1 = AES256Encrypt(privkey[0...15] xor derived1[0...15], derived2)
     encrypted1.u64[0] = key->secret.u64[0] ^ derived1.u64[0];
     encrypted1.u64[1] = key->secret.u64[1] ^ derived1.u64[1];
@@ -377,7 +377,7 @@ size_t BRKeyBIP38Key(BRKey *key, char *bip38Key, size_t bip38KeyLen, const char 
     encrypted2.u64[0] = key->secret.u64[2] ^ derived1.u64[2];
     encrypted2.u64[1] = key->secret.u64[3] ^ derived1.u64[3];
     _BRAES256ECBEncrypt(&derived2, &encrypted2);
-    
+
     UInt16SetBE(&buf[off], prefix);
     off += sizeof(prefix);
     buf[off] = flag;

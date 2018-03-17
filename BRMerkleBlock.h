@@ -29,11 +29,22 @@
 #include <stddef.h>
 #include <inttypes.h>
 
+#if defined(TARGET_OS_MAC)
+#include <Foundation/Foundation.h>
+#define wey_log(...) NSLog(__VA_ARGS__)
+#elif defined(__ANDROID__)
+#include <android/log.h>
+#define wey_log(...) __android_log_print(ANDROID_LOG_ERROR, "wey", __VA_ARGS__)
+#else
+#include <stdio.h>
+#define wey_log(...) printf(__VA_ARGS__)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define BLOCK_DIFFICULTY_INTERVAL 10080 // number of blocks between difficulty target adjustments
+#define BLOCK_DIFFICULTY_INTERVAL 1 // number of blocks between difficulty target adjustments
 #define BLOCK_UNKNOWN_HEIGHT      INT32_MAX
 #define BLOCK_MAX_TIME_DRIFT      (2*60*60) // the furthest in the future a block is allowed to be timestamped
 
