@@ -34,10 +34,6 @@
 extern "C" {
 #endif
 
-#if BITCOIN_TESTNET
-#pragma message "testnet build"
-#endif
-
 // bitcoin address prefixes
 #define BITCOIN_PUBKEY_ADDRESS      46
 #define BITCOIN_SCRIPT_ADDRESS      5

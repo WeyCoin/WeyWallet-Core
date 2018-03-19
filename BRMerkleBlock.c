@@ -30,9 +30,7 @@
 #include <limits.h>
 #include <string.h>
 #include <assert.h>
-
-#define BEGIN(a) ((char*)&(a))
-#define ENDA(a) ((char*)&((&(a))[1]))
+#include <stdint.h>
 
 #define MAX_PROOF_OF_WORK 0x1e0fffff0    // highest value for difficulty target (higher values are less difficult)
 #define TARGET_TIMESPAN (5 * 60) // the targeted timespan between difficulty target adjustments
@@ -125,15 +123,24 @@ BRMerkleBlock *BRMerkleBlockParse(const uint8_t *buf, size_t bufLen)
             if (block->flags) memcpy(block->flags, &buf[off], len);
         }
 
+        int32_t nVersion = block->version;
+        char* versionChar = BEGIN(nVersion);
 
-        wey_log("Proceeding with generating a test hash for algorithm test. \n");
+        int32_t nNonce = block->nonce;
+        char* nonceChar = END(nNonce);
+
+        wey_log("Version Char Array: %x \n", versionChar);
+        wey_log("Nonce Char Array: %x \n", nonceChar);
+
+        /*wey_log("Proceeding with generating a test hash for algorithm test. \n");
 
         int32_t version = 536870912;
-        uint32_t nonce = 1779392255;
+        char* versionChar = BEGIN(version);
 
-        //TODO - Determine why the two char* conversions don't add the last byte to the hex.
-        char* versionChar = (char*)&(version);
-        char* nonceChar = (char*)&((&(nonce))[1]);
+
+        uint32_t nonce = 1779392255;
+        char* nonceChar = END(nonce);
+
 
         if (versionChar == nonceChar)
             wey_log("Nigga they equal \n");
@@ -141,13 +148,10 @@ BRMerkleBlock *BRMerkleBlockParse(const uint8_t *buf, size_t bufLen)
         //a8b03811886b2ff9e7bd1812f83c3a83671b71d32cd0f7d7f85659b06011dc38
         UInt256 testBlock = BRLyra2REv2(versionChar, nonceChar);
 
-        wey_log("Version Char Array: %x \n", versionChar);
-        wey_log("Nonce Char Array: %x \n", nonceChar);
-
-        wey_log("Generated block: %s \n", u256_hex_encode(testBlock));
+        wey_log("Generated block: %s \n", u256_hex_encode(testBlock));*/
 
 
-        block->blockHash = BRLyra2REv2(BEGIN(block->version), ENDA(block->nonce));
+        block->blockHash = BRLyra2REv2(versionChar, nonceChar);
 
         BRLyra2REv2_old((char*)buf, (char*)&block->powHash);
 

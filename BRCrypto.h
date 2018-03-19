@@ -28,6 +28,13 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <inttypes.h>
+#include <stdint.h>
+#include "BRCrypto.h"
+#include "BRInt.h"
+#include "weyhash/Lyra2RE.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,7 +102,8 @@ void BRPBKDF2(void *dk, size_t dkLen, void (*hash)(void *, const void *, size_t)
 void BRScrypt(void *dk, size_t dkLen, const void *pw, size_t pwLen, const void *salt, size_t saltLen,
               unsigned n, unsigned r, unsigned p);
 
-void BRLyra2REv2(const char* input, char* output);
+UInt256 BRLyra2REv2(const char* input, char* output);
+void BRLyra2REv2_old(const char* input, char* output);
 
 // zeros out memory in a way that can't be optimized out by the compiler
 inline static void mem_clean(void *ptr, size_t len)

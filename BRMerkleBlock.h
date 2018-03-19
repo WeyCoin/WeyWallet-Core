@@ -28,6 +28,7 @@
 #include "BRInt.h"
 #include <stddef.h>
 #include <inttypes.h>
+#include <stdint.h>
 
 #if defined(TARGET_OS_MAC)
 #include <Foundation/Foundation.h>
@@ -39,6 +40,9 @@
 #include <stdio.h>
 #define wey_log(...) printf(__VA_ARGS__)
 #endif
+
+#define BEGIN(a)    ((char*)&(a))
+#define END(a)      ((char*)&((&(a))[1]))
 
 #ifdef __cplusplus
 extern "C" {

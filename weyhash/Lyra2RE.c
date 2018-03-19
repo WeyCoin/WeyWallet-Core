@@ -40,6 +40,7 @@
 #include "sha3/sph_skein.h"
 #include "Lyra2.h"
 
+
 void lyra2re_hash(const char* input, char* output)
 {
     sph_blake256_context     ctx_blake;
@@ -106,5 +107,5 @@ void lyra2re2_hash(const char* input, char* output)
     sph_bmw256(&ctx_bmw, hashB, 32);
     sph_bmw256_close(&ctx_bmw, hashA);
     
-   	memcpy(output, hashA, 32);
+    memcpy(output, hashA, 32);
 }

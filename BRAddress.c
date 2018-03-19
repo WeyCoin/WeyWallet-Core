@@ -245,10 +245,7 @@ size_t BRAddressFromScriptPubKey(char *addr, size_t addrLen, const uint8_t *scri
     size_t count = BRScriptElements(elems, sizeof(elems)/sizeof(*elems), script, scriptLen), l = 0;
     
     data[0] = BITCOIN_PUBKEY_ADDRESS;
-#if BITCOIN_TESTNET
-    data[0] = BITCOIN_PUBKEY_ADDRESS_TEST;
-#endif
-    
+
     if (count == 5 && *elems[0] == OP_DUP && *elems[1] == OP_HASH160 && *elems[2] == 20 &&
         *elems[3] == OP_EQUALVERIFY && *elems[4] == OP_CHECKSIG) {
         // pay-to-pubkey-hash scriptPubKey
@@ -259,9 +256,7 @@ size_t BRAddressFromScriptPubKey(char *addr, size_t addrLen, const uint8_t *scri
     else if (count == 3 && *elems[0] == OP_HASH160 && *elems[1] == 20 && *elems[2] == OP_EQUAL) {
         // pay-to-script-hash scriptPubKey
         data[0] = BITCOIN_SCRIPT_ADDRESS;
-#if BITCOIN_TESTNET
-        data[0] = BITCOIN_SCRIPT_ADDRESS_TEST;
-#endif
+
         d = BRScriptData(elems[1], &l);
         if (l != 20) d = NULL;
         if (d) memcpy(&data[1], d, 20);
@@ -288,9 +283,6 @@ size_t BRAddressFromScriptSig(char *addr, size_t addrLen, const uint8_t *script,
     size_t count = BRScriptElements(elems, sizeof(elems)/sizeof(*elems), script, scriptLen), l = 0;
 
     data[0] = BITCOIN_PUBKEY_ADDRESS;
-#if BITCOIN_TESTNET
-    data[0] = BITCOIN_PUBKEY_ADDRESS_TEST;
-#endif
     
     if (count >= 2 && *elems[count - 2] <= OP_PUSHDATA4 &&
         (*elems[count - 1] == 65 || *elems[count - 1] == 33)) { // pay-to-pubkey-hash scriptSig
@@ -301,9 +293,7 @@ size_t BRAddressFromScriptSig(char *addr, size_t addrLen, const uint8_t *script,
     else if (count >= 2 && *elems[count - 2] <= OP_PUSHDATA4 && *elems[count - 1] <= OP_PUSHDATA4 &&
              *elems[count - 1] > 0) { // pay-to-script-hash scriptSig
         data[0] = BITCOIN_SCRIPT_ADDRESS;
-#if BITCOIN_TESTNET
-        data[0] = BITCOIN_SCRIPT_ADDRESS_TEST;
-#endif
+
         d = BRScriptData(elems[count - 1], &l);
         if (d) BRHash160(&data[1], d, l);
     }
@@ -323,11 +313,6 @@ size_t BRAddressScriptPubKey(uint8_t *script, size_t scriptLen, const char *addr
     size_t r = 0;
     
     assert(addr != NULL);
-
-#if BITCOIN_TESTNET
-    pubkeyAddress = BITCOIN_PUBKEY_ADDRESS_TEST;
-    scriptAddress = BITCOIN_SCRIPT_ADDRESS_TEST;
-#endif
     
     if (BRBase58CheckDecode(data, sizeof(data), addr) == 21) {
         if (data[0] == pubkeyAddress) {
@@ -367,10 +352,6 @@ int BRAddressIsValid(const char *addr)
     
     if (BRBase58CheckDecode(data, sizeof(data), addr) == 21) {
         r = (data[0] == BITCOIN_PUBKEY_ADDRESS || data[0] == BITCOIN_SCRIPT_ADDRESS || data[0] == BITCOIN_SCRIPT_ADDRESS_OLD);
-    
-#if BITCOIN_TESTNET
-        r = (data[0] == BITCOIN_PUBKEY_ADDRESS_TEST || data[0] == BITCOIN_SCRIPT_ADDRESS_TEST);
-#endif
     }
     
     return r;
