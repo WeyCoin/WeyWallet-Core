@@ -24,6 +24,19 @@
 
 #include "BRCrypto.h"
 #include "weyhash/Lyra2RE.h"
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdio.h>
+
+#include "weyhash/sha3/sph_blake.h"
+#include "weyhash/sha3/sph_groestl.h"
+#include "weyhash/sha3/sph_cubehash.h"
+#include "weyhash/sha3/sph_bmw.h"
+#include "weyhash/sha3/sph_keccak.h"
+#include "weyhash/sha3/sph_skein.h"
+#include "weyhash/Lyra2.h"
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -1002,6 +1015,57 @@ void BRScrypt(void *dk, size_t dkLen, const void *pw, size_t pwLen, const void *
     free(v);
 }
 
-void BRLyra2REv2(const char* input, char* output) {
+/**
+ * WeyCoin hash.h C++ to C adaptation
+ */
+
+void BRLyra2REv2_old(const char* input, char* output) {
     lyra2re2_hash(input, output);
+}
+
+UInt256 BRLyra2REv2(const char* input, char* output) {
+    sph_blake256_context ctx_blake;
+    sph_cubehash256_context ctx_cubehash;
+    sph_keccak256_context ctx_keccak;
+    sph_skein256_context ctx_skein;
+    sph_bmw256_context ctx_bmw;
+
+    static unsigned char pblank[1];
+
+    UInt256 hash[2];
+
+    sph_blake256_init(&ctx_blake);
+
+    if (input == output) {
+        sph_blake256(&ctx_blake, pblank, (output - input) * sizeof(input[0]));
+    } else {
+        sph_blake256(&ctx_blake, (void*)(&input[0]), (output - input) * sizeof(input[0]));
+    }
+
+    sph_blake256_close(&ctx_blake, (void*)(&hash[0]));
+
+    sph_keccak256_init(&ctx_keccak);
+    sph_keccak256(&ctx_keccak, (void*)(&hash[0]), 32);
+    sph_keccak256_close(&ctx_keccak, (void*)(&hash[1]));
+
+    sph_cubehash256_init(&ctx_cubehash);
+    sph_cubehash256(&ctx_cubehash, (void*)(&hash[1]), 32);
+    sph_cubehash256_close(&ctx_cubehash, (void*)(&hash[0]));
+
+    LYRA2((void*)(&hash[1]), 32, (void*)(&hash[0]), 32, (void*)(&hash[0]), 32, 1, 4, 4);
+
+    sph_skein256_init(&ctx_skein);
+    sph_skein256(&ctx_skein, (void*)(&hash[1]), 32);
+    sph_skein256_close(&ctx_skein, (void*)(&hash[0]));
+
+    sph_cubehash256_init(&ctx_cubehash);
+    sph_cubehash256(&ctx_cubehash, (void*)(&hash[0]), 32);
+    sph_cubehash256_close(&ctx_cubehash, (void*)(&hash[1]));
+
+    sph_bmw256_init(&ctx_bmw);
+    sph_bmw256(&ctx_bmw, (void*)(&hash[1]), 32);
+    sph_bmw256_close(&ctx_bmw, (void*)(&hash[0]));
+
+    return hash[0];
+
 }

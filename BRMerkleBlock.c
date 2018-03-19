@@ -31,6 +31,9 @@
 #include <string.h>
 #include <assert.h>
 
+#define BEGIN(a) ((char*)&(a))
+#define ENDA(a) ((char*)&((&(a))[1]))
+
 #define MAX_PROOF_OF_WORK 0x1e0fffff0    // highest value for difficulty target (higher values are less difficult)
 #define TARGET_TIMESPAN (5 * 60) // the targeted timespan between difficulty target adjustments
 
@@ -122,9 +125,38 @@ BRMerkleBlock *BRMerkleBlockParse(const uint8_t *buf, size_t bufLen)
             if (block->flags) memcpy(block->flags, &buf[off], len);
         }
 
-        BRSHA256_2(&block->blockHash, buf, 80);
 
-        BRLyra2REv2(&block->powHash, buf);
+        wey_log("Proceeding with generating a test hash for algorithm test. \n");
+
+        int32_t version = 536870912;
+        uint32_t nonce = 1779392255;
+
+        //TODO - Determine why the two char* conversions don't add the last byte to the hex.
+        char* versionChar = (char*)&(version);
+        char* nonceChar = (char*)&((&(nonce))[1]);
+
+        if (versionChar == nonceChar)
+            wey_log("Nigga they equal \n");
+
+        //a8b03811886b2ff9e7bd1812f83c3a83671b71d32cd0f7d7f85659b06011dc38
+        UInt256 testBlock = BRLyra2REv2(versionChar, nonceChar);
+
+        wey_log("Version Char Array: %x \n", versionChar);
+        wey_log("Nonce Char Array: %x \n", nonceChar);
+
+        wey_log("Generated block: %s \n", u256_hex_encode(testBlock));
+
+
+        block->blockHash = BRLyra2REv2(BEGIN(block->version), ENDA(block->nonce));
+
+        BRLyra2REv2_old((char*)buf, (char*)&block->powHash);
+
+
+        /*wey_log("Parsing Block: %s \n", u256_hex_encode(block->blockHash));
+        wey_log("Previous Block: %s \n", u256_hex_encode(block->prevBlock));
+        wey_log("Parsing PoW Hash: %s \n", u256_hex_encode(block->powHash));
+        wey_log("Block Height: %i \n", block->height);
+        wey_log("Block Version: %i, Nonce: %i \n", block->version, block->nonce);*/
 
     }
 
@@ -297,7 +329,7 @@ int BRMerkleBlockIsValid(const BRMerkleBlock *block, uint32_t currentTime)
         if (block->powHash.u8[i] > t.u8[i]) {
             r = 0;
 
-            wey_log("invalid blockHash[%d]: %x - %x", i, block->powHash.u8[i], t.u8[i]);
+            wey_log("invalid powHash[%d]: %x - %x", i, block->powHash.u8[i], t.u8[i]);
         }
     }
 
@@ -339,11 +371,6 @@ int BRMerkleBlockVerifyDifficulty(const BRMerkleBlock *block, const BRMerkleBloc
 
     if (! previous || !UInt256Eq(block->prevBlock, previous->blockHash) || block->height != previous->height + 1) r = 0;
     if (r && (block->height % BLOCK_DIFFICULTY_INTERVAL) == 0 && transitionTime == 0) r = 0;
-
-#if BITCOIN_TESTNET
-    // TODO: implement testnet difficulty rule check
-    return r; // don't worry about difficulty on testnet for now
-#endif
 
     // TODO: fix difficulty target check for Digibyte
     /*if (r && (block->height % BLOCK_DIFFICULTY_INTERVAL) == 0) {

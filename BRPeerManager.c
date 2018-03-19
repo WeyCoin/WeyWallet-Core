@@ -58,16 +58,15 @@ const struct {
     uint32_t target;
 }
 checkpoint_array[] = {
-    /*{        0,      "000006ed0805a3f7db7c1430e73d52bdc1c3bbc278f3534117d8a0e4c86b88a5", 1516483599, 0x1e0ffff0 },
+    {        0,      "000006ed0805a3f7db7c1430e73d52bdc1c3bbc278f3534117d8a0e4c86b88a5", 1516483599, 0x1e0ffff0 },
     {        12500,  "0000000003f5ad275187245b3c0eb1ffe5cfb26109d0939f1fade2c2f5c219fe", 1517950303, 0x1c4c874b },
     {        16000,  "0000000011120f00c57a0df89cd2d3dc05b61f52243ab27d0a83b4acae2221ce", 1518024836, 0x1c4b509f },
     {        55000,  "000000007647c73e8731967b37a8e71358daeb16084a18781238a5b7e7483d16", 1518862499, 0x1d00d4ee },
     {        71000,  "000000000023c3537a29870ee5f64ca12fa60207732010dccc7a5283992c6259", 1519303337, 0x1c087cc1 },
     {        82475,  "00000000061523e6bc640284601307001ee74505399c4470bd943339c2157c05", 1519547661, 0x1c06c4f8 },
     {        110000, "0000000011e05c495f94dc2a42df1448bdf9748bdc3410730b70026ce7d5ce03", 1520178257, 0x1c121a5b },
-    {        127150, "00000000099a151ec7e1b88be6b5ab2dea4da7a0d919e999e5d0eb31f207d996", 1520636956, 0x1c0a4121 },*/
-    {        127875, "0000000007417c8999a996c5c0c3b6429ad93468dfcc44f56bf90036d542a792", 1520654134, 0x1c0dfc7a },
-    {        150000, "000000000166e5747033e3680080c8954f4513a3257dfdc3d2e231c974794407", 1521126529, 0x1c02465e }
+    {        127150, "00000000099a151ec7e1b88be6b5ab2dea4da7a0d919e999e5d0eb31f207d996", 1520636956, 0x1c0a4121 },
+    {        127875, "0000000007417c8999a996c5c0c3b6429ad93468dfcc44f56bf90036d542a792", 1520654134, 0x1c0dfc7a }
 };
 
 static const char *dns_seeds[] = {
@@ -1230,10 +1229,10 @@ static void _peerRelayedBlock(void *info, BRMerkleBlock *block) {
             manager->connectFailureCount = 0; // reset failure count once we know our initial request didn't timeout
         }
     } else if (!prev) { // block is an orphan
-        peer_log(peer, "relayed orphan block %s, previous %s, last block is %s, height %"
+        /*peer_log(peer, "relayed orphan block %s, previous %s, last block is %s, height %i, timestamp: %"
                  PRIu32,
                  u256_hex_encode(block->blockHash), u256_hex_encode(block->prevBlock),
-                 u256_hex_encode(manager->lastBlock->blockHash), manager->lastBlock->height);
+                 u256_hex_encode(manager->lastBlock->blockHash), manager->lastBlock->height, block->timestamp);*/
         
         if (block->timestamp + 60 * 60 < time(NULL)) { // Ignore orphan blocks older than an hour
             BRMerkleBlockFree(block);

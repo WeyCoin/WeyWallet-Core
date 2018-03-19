@@ -52,11 +52,7 @@
 extern "C" {
 #endif
 
-#if BITCOIN_TESTNET
-#define STANDARD_PORT 10526 //TODO: Update this value when the testnet becomes available.
-#else
 #define STANDARD_PORT 11526
-#endif
 
 #define SERVICES_NODE_NETWORK 0x01 // services value indicating a node carries full blocks, not just headers
 #define SERVICES_NODE_BLOOM   0x04 // BIP111: https://github.com/bitcoin/bips/blob/master/bip-0111.mediawiki
