@@ -2,7 +2,7 @@
 //  BRMerkleBlock.c
 //
 //  Created by Aaron Voisine on 8/6/15.
-//  Copyright (c) 2015 breadwallet LLC
+//  Copyright (c) 2015 weywallet LLC
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -122,45 +122,8 @@ BRMerkleBlock *BRMerkleBlockParse(const uint8_t *buf, size_t bufLen)
             block->flags = (off + len <= bufLen) ? malloc(len) : NULL;
             if (block->flags) memcpy(block->flags, &buf[off], len);
         }
-
-        int32_t nVersion = block->version;
-        char* versionChar = BEGIN(nVersion);
-
-        int32_t nNonce = block->nonce;
-        char* nonceChar = END(nNonce);
-
-        wey_log("Version Char Array: %x \n", versionChar);
-        wey_log("Nonce Char Array: %x \n", nonceChar);
-
-        /*wey_log("Proceeding with generating a test hash for algorithm test. \n");
-
-        int32_t version = 536870912;
-        char* versionChar = BEGIN(version);
-
-
-        uint32_t nonce = 1779392255;
-        char* nonceChar = END(nonce);
-
-
-        if (versionChar == nonceChar)
-            wey_log("Nigga they equal \n");
-
-        //a8b03811886b2ff9e7bd1812f83c3a83671b71d32cd0f7d7f85659b06011dc38
-        UInt256 testBlock = BRLyra2REv2(versionChar, nonceChar);
-
-        wey_log("Generated block: %s \n", u256_hex_encode(testBlock));*/
-
-
-        block->blockHash = BRLyra2REv2(versionChar, nonceChar);
-
-        BRLyra2REv2_old((char*)buf, (char*)&block->powHash);
-
-
-        /*wey_log("Parsing Block: %s \n", u256_hex_encode(block->blockHash));
-        wey_log("Previous Block: %s \n", u256_hex_encode(block->prevBlock));
-        wey_log("Parsing PoW Hash: %s \n", u256_hex_encode(block->powHash));
-        wey_log("Block Height: %i \n", block->height);
-        wey_log("Block Version: %i, Nonce: %i \n", block->version, block->nonce);*/
+        
+        BRLyra2REv2((char*)buf, (char*)&block->blockHash);
 
     }
 

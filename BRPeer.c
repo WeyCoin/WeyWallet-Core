@@ -2,7 +2,7 @@
 //  BRPeer.c
 //
 //  Created by Aaron Voisine on 9/2/15.
-//  Copyright (c) 2015 breadwallet LLC.
+//  Copyright (c) 2015 weywallet LLC.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -453,7 +453,7 @@ static int _BRPeerAcceptHeadersMessage(BRPeer *peer, const uint8_t *msg, size_t 
         r = 0;
     }
     else {
-        peer_log(peer, "got %zu header(s)", count);
+        //peer_log(peer, "got %zu header(s)", count);
 
         // To improve chain download performance, if this message contains 2000 headers then request the next 2000
         // headers immediately, and switch to requesting blocks when we receive a header newer than earliestKeyTime
@@ -635,7 +635,7 @@ static int _BRPeerAcceptPingMessage(BRPeer *peer, const uint8_t *msg, size_t msg
         r = 0;
     }
     else {
-        peer_log(peer, "got ping");
+        //peer_log(peer, "got ping");
         BRPeerSendMessage(peer, msg, msgLen, MSG_PONG);
     }
 
@@ -815,7 +815,7 @@ static int _BRPeerAcceptMessage(BRPeer *peer, const uint8_t *msg, size_t msgLen,
     BRPeerContext *ctx = (BRPeerContext *)peer;
     int r = 1;
 
-    peer_log(peer, "Received message: %s", type);
+    //peer_log(peer, "Received message: %s", type);
     
     if (ctx->currentBlock && strncmp(MSG_TX, type, 12) != 0) { // if we receive a non-tx message, merkleblock is done
         peer_log(peer, "incomplete merkleblock %s, expected %zu more tx, got %s",
@@ -838,7 +838,7 @@ static int _BRPeerAcceptMessage(BRPeer *peer, const uint8_t *msg, size_t msgLen,
     else if (strncmp(MSG_MERKLEBLOCK, type, 12) == 0) r = _BRPeerAcceptMerkleblockMessage(peer, msg, msgLen);
     else if (strncmp(MSG_REJECT, type, 12) == 0) r = _BRPeerAcceptRejectMessage(peer, msg, msgLen);
     else if (strncmp(MSG_FEEFILTER, type, 12) == 0) r = _BRPeerAcceptFeeFilterMessage(peer, msg, msgLen);
-    else peer_log(peer, "dropping %s, length %zu, not implemented", type, msgLen);
+    //else peer_log(peer, "dropping %s, length %zu, not implemented", type, msgLen);
 
     return r;
 }
@@ -1398,9 +1398,9 @@ void BRPeerSendGetheaders(BRPeer *peer, const UInt256 locators[], size_t locator
     off += sizeof(UInt256);
 
     if (locatorsCount > 0) {
-        peer_log(peer, "calling getheaders with %zu locators: [%s %s %s]", locatorsCount,
+        /*peer_log(peer, "calling getheaders with %zu locators: [%s %s %s]", locatorsCount,
                  log_u256_hex_encode(locators[0]), (locatorsCount > 1 ? log_u256_hex_encode(locators[1]) : ""),
-                 (locatorsCount > 2 ? log_u256_hex_encode(locators[locatorsCount - 1]) : ""));
+                 (locatorsCount > 2 ? log_u256_hex_encode(locators[locatorsCount - 1]) : ""));*/
         BRPeerSendMessage(peer, msg, off, MSG_GETHEADERS);
     }
 }

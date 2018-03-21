@@ -1,4 +1,4 @@
-# breadwallet-core
+# weywallet-core
 SPV bitcoin C library
 
-[getting started](https://github.com/breadwallet/breadwallet-core/wiki)
+[getting started](https://github.com/weywallet/weywallet-core/wiki)

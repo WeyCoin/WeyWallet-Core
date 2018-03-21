@@ -2,7 +2,7 @@
 //  BRPeerManager.c
 //
 //  Created by Aaron Voisine on 9/2/15.
-//  Copyright (c) 2015 breadwallet LLC.
+//  Copyright (c) 2015 weywallet LLC.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -71,25 +71,8 @@ checkpoint_array[] = {
 
 static const char *dns_seeds[] = {
     "seed.weycoin.org",
-    "seed2.weycoin.org",
     "seed3.weycoin.org",
-    "seed4.weycoin.org",
-    "seed5.weycoin.org",
-    "seed6.weycoin.org",
-    "seed7.weycoin.org",
-    "seed8.weycoin.org",
-    "seed9.weycoin.org",
-    "seed10.weycoin.org",
-    "seed11.weycoin.org",
-    "seed12.weycoin.org",
-    "seed13.weycoin.org",
-    "seed14.weycoin.org",
-    "seed15.weycoin.org",
-    "seed16.weycoin.org",
-    "seed17.weycoin.org",
-    "seed18.weycoin.org",
-    "seed19.weycoin.org",
-    "seed20.weycoin.org"
+    "seed4.weycoin.org"
 };
 
 typedef struct {
@@ -238,7 +221,10 @@ struct BRPeerManagerStruct {
 
 static void _BRPeerManagerPeerMisbehavin(BRPeerManager *manager, BRPeer *peer) {
     for (size_t i = array_count(manager->peers); i > 0; i--) {
-        if (BRPeerEq(&manager->peers[i - 1], peer)) array_rm(manager->peers, i - 1);
+        if (BRPeerEq(&manager->peers[i - 1], peer)) {
+            peer_log(peer, "This peer is being naughty!");
+            array_rm(manager->peers, i - 1);
+        }
     }
     
     if (++manager->misbehavinCount >= 10) { // clear out stored peers so we get a fresh list from DNS for next connect
@@ -719,11 +705,18 @@ static void _BRPeerManagerFindPeers(BRPeerManager *manager) {
     UInt128 *addr, *addrList;
     BRFindPeersInfo *info;
     
+    static const char *default_peers[] = {
+        "158.69.227.184",
+        "107.173.65.136",
+        "172.93.238.155"
+    };
+    
     if (!UInt128IsZero(manager->fixedPeer.address)) {
         array_set_count(manager->peers, 1);
         manager->peers[0] = manager->fixedPeer;
         manager->peers[0].services = services;
         manager->peers[0].timestamp = now;
+        
     } else {
         for (size_t i = 1; i < DNS_SEEDS_COUNT; i++) {
             info = calloc(1, sizeof(BRFindPeersInfo));
@@ -803,6 +796,7 @@ static void _peerConnected(void *info) {
                    }
                    
                    if (manager->downloadPeer) BRPeerDisconnect(manager->downloadPeer);
+                   
                    manager->downloadPeer = peer;
                    manager->isConnected = 1;
                    manager->estimatedHeight = BRPeerLastBlock(peer);
@@ -846,8 +840,11 @@ static void _peerDisconnected(void *info, int error) {
     if (error == EPROTO) { // if it's protocol error, the peer isn't following standard policy
         _BRPeerManagerPeerMisbehavin(manager, peer);
     } else if (error) { // timeout or some non-protocol related network error
-        for (size_t i = array_count(manager->peers); i > 0; i--) {
-            if (BRPeerEq(&manager->peers[i - 1], peer)) array_rm(manager->peers, i - 1);
+        /*for (size_t i = array_count(manager->peers); i > 0; i--) {
+            if (BRPeerEq(&manager->peers[i - 1], peer)) {
+                peer_log(peer, "Removed peer due to non-protocol related network error.");
+                array_rm(manager->peers, i - 1);
+            }
         }
         
         manager->connectFailureCount++;
@@ -856,7 +853,7 @@ static void _peerDisconnected(void *info, int error) {
         // BUG: XXX what if it's a connect timeout and not a publish timeout?
         if (error == ETIMEDOUT && (peer != manager->downloadPeer || manager->syncStartHeight == 0 ||
                                    array_count(manager->connectedPeers) == 1))
-            txError = ETIMEDOUT;
+            txError = ETIMEDOUT;*/
     }
     
     for (size_t i = array_count(manager->txRelays); i > 0; i--) {
@@ -1309,10 +1306,10 @@ static void _peerRelayedBlock(void *info, BRMerkleBlock *block) {
         BRSetAdd(manager->orphans, block); // mark as orphan til we're caught up
         manager->lastOrphan = block;
     } else if (block->height <= checkpoint_array[CHECKPOINT_COUNT - 1].height) { // fork is older than last checkpoint
-        peer_log(peer, "ignoring block on fork older than most recent checkpoint, block #%"
+        /*peer_log(peer, "ignoring block on fork older than most recent checkpoint, block #%"
                  PRIu32
                  ", hash: %s",
-                 block->height, u256_hex_encode(block->blockHash));
+                 block->height, u256_hex_encode(block->blockHash));*/
         BRMerkleBlockFree(block);
         block = NULL;
     } else { // new block is on a fork
@@ -1753,6 +1750,7 @@ void BRPeerManagerRescan(BRPeerManager *manager) {
             }
         }
         
+        //This a rescan only used when attempting to rescan the blockchain using the wallet.
         if (manager->downloadPeer) { // disconnect the current download peer so a new random one will be selected
             for (size_t i = array_count(manager->peers); i > 0; i--) {
                 if (BRPeerEq(&manager->peers[i - 1], manager->downloadPeer)) array_rm(manager->peers, i - 1);
