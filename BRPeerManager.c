@@ -58,13 +58,13 @@ const struct {
     uint32_t target;
 }
 checkpoint_array[] = {
-    {        0,      "000006ed0805a3f7db7c1430e73d52bdc1c3bbc278f3534117d8a0e4c86b88a5", 1516483599, 0x1e0ffff0 },
+    /*{        0,      "000006ed0805a3f7db7c1430e73d52bdc1c3bbc278f3534117d8a0e4c86b88a5", 1516483599, 0x1e0ffff0 },
     {        12500,  "0000000003f5ad275187245b3c0eb1ffe5cfb26109d0939f1fade2c2f5c219fe", 1517950303, 0x1c4c874b },
     {        16000,  "0000000011120f00c57a0df89cd2d3dc05b61f52243ab27d0a83b4acae2221ce", 1518024836, 0x1c4b509f },
     {        55000,  "000000007647c73e8731967b37a8e71358daeb16084a18781238a5b7e7483d16", 1518862499, 0x1d00d4ee },
     {        71000,  "000000000023c3537a29870ee5f64ca12fa60207732010dccc7a5283992c6259", 1519303337, 0x1c087cc1 },
     {        82475,  "00000000061523e6bc640284601307001ee74505399c4470bd943339c2157c05", 1519547661, 0x1c06c4f8 },
-    {        110000, "0000000011e05c495f94dc2a42df1448bdf9748bdc3410730b70026ce7d5ce03", 1520178257, 0x1c121a5b },
+    {        110000, "0000000011e05c495f94dc2a42df1448bdf9748bdc3410730b70026ce7d5ce03", 1520178257, 0x1c121a5b },*/
     {        127150, "00000000099a151ec7e1b88be6b5ab2dea4da7a0d919e999e5d0eb31f207d996", 1520636956, 0x1c0a4121 },
     {        127875, "0000000007417c8999a996c5c0c3b6429ad93468dfcc44f56bf90036d542a792", 1520654134, 0x1c0dfc7a }
 };
@@ -288,6 +288,17 @@ static size_t _BRPeerManagerBlockLocators(BRPeerManager *manager, UInt256 locato
 static void _setApplyFreeBlock(void *info, void *block) {
     BRMerkleBlockFree(block);
 }
+
+static size_t _BRPeerManagerAddPeer(BRPeerManager *manager, BRPeer *peer) {
+    size_t add = 1;
+    for (size_t i = array_count(manager->peers); i > 0; i--) {
+        BRPeer* otherPeer = (BRPeer*) &(manager->peers[i - 1]);
+        if (BRPeerEq(otherPeer, peer)) { i = 1; add = 0;}
+    }
+    if (add == 1) array_add(manager->peers, *peer);
+    return add;
+}
+
 
 static void _BRPeerManagerLoadBloomFilter(BRPeerManager *manager, BRPeer *peer) {
     // every time a new wallet address is added, the bloom filter has to be rebuilt, and each address is only used
@@ -672,20 +683,22 @@ static UInt128 *_addressLookup(const char *hostname) {
     return addrList;
 }
 
-static void *_findPeersThreadRoutine(void *arg) {
-    BRPeerManager *manager = ((BRFindPeersInfo *) arg)->manager;
-    uint64_t services = ((BRFindPeersInfo *) arg)->services;
+static void *_findPeersThreadRoutine(void *arg)
+{
+    BRPeerManager *manager = ((BRFindPeersInfo *)arg)->manager;
+    uint64_t services = ((BRFindPeersInfo *)arg)->services;
     UInt128 *addrList, *addr;
     time_t now = time(NULL), age;
     
     pthread_cleanup_push(manager->threadCleanup, manager->info);
-    addrList = _addressLookup(((BRFindPeersInfo *) arg)->hostname);
+    addrList = _addressLookup(((BRFindPeersInfo *)arg)->hostname);
     free(arg);
     pthread_mutex_lock(&manager->lock);
     
-    for (addr = addrList; addr && !UInt128IsZero(*addr); addr++) {
-        age = 24 * 60 * 60 + BRRand(2 * 24 * 60 * 60); // add between 1 and 3 days
-        array_add(manager->peers, ((BRPeer) {*addr, STANDARD_PORT, services, now - age, 0}));
+    for (addr = addrList; addr && ! UInt128IsZero(*addr); addr++) {
+        age = 24*60*60 + BRRand(2*24*60*60); // add between 1 and 3 days
+        BRPeer peer = {*addr, 11526, services, now - age, 0};
+        _BRPeerManagerAddPeer(manager,&peer);
     }
     
     manager->dnsThreadCount--;
@@ -729,8 +742,9 @@ static void _BRPeerManagerFindPeers(BRPeerManager *manager) {
                 manager->dnsThreadCount++;
         }
         
-        for (addr = addrList = _addressLookup(dns_seeds[0]); addr && !UInt128IsZero(*addr); addr++) {
-            array_add(manager->peers, ((BRPeer) {*addr, STANDARD_PORT, services, now, 0}));
+        for (addr = addrList = _addressLookup(dns_seeds[0]); addr && ! UInt128IsZero(*addr); addr++) {
+            BRPeer peer = {*addr, 11526, services, now, 0};
+            _BRPeerManagerAddPeer(manager,&peer);
         }
         
         if (addrList) free(addrList);
@@ -1450,6 +1464,7 @@ static void _peerSetFeePerKb(void *info, uint64_t feePerKb) {
 //    pthread_mutex_unlock(&manager->lock);
 //}
 
+
 static BRTransaction *_peerRequestedTx(void *info, UInt256 txHash) {
     BRPeer *peer = ((BRPeerCallbackInfo *) info)->peer;
     BRPeerManager *manager = ((BRPeerCallbackInfo *) info)->manager;
@@ -1658,7 +1673,7 @@ void BRPeerManagerConnect(BRPeerManager *manager) {
         time_t now = time(NULL);
         BRPeer *peers;
         
-        if (array_count(manager->peers) < manager->maxConnectCount ||
+        if (array_count(manager->peers) < (4 * manager->maxConnectCount) ||
             manager->peers[manager->maxConnectCount - 1].timestamp + 3 * 24 * 60 * 60 < now) {
             _BRPeerManagerFindPeers(manager);
         }
@@ -1667,7 +1682,7 @@ void BRPeerManagerConnect(BRPeerManager *manager) {
         array_add_array(peers, manager->peers,
                         (array_count(manager->peers) < 100) ? array_count(manager->peers) : 100);
         
-        while (array_count(peers) > 0 && array_count(manager->connectedPeers) < manager->maxConnectCount) {
+        while ((array_count(peers) > 0) && (array_count(manager->connectedPeers) < manager->maxConnectCount)) {
             size_t i = BRRand((uint32_t) array_count(peers)); // index of random peer
             BRPeerCallbackInfo *info;
             
