@@ -335,6 +335,31 @@ BRTransaction *BRTransactionNew(void)
     return tx;
 }
 
+BRTransaction *BRTransactionCopy(const BRTransaction *tx)
+{
+    BRTransaction *cpy = BRTransactionNew();
+    BRTxInput *inputs = cpy->inputs;
+    BRTxOutput *outputs = cpy->outputs;
+
+    assert(tx != NULL);
+    *cpy = *tx;
+    cpy->inputs = inputs;
+    cpy->outputs = outputs;
+    cpy->inCount = cpy->outCount = 0;
+
+    for (size_t i = 0; i < tx->inCount; i++) {
+        BRTransactionAddInput(cpy, tx->inputs[i].txHash, tx->inputs[i].index, tx->inputs[i].amount,
+                              tx->inputs[i].script, tx->inputs[i].scriptLen,
+                              tx->inputs[i].signature, tx->inputs[i].sigLen, tx->inputs[i].sequence);
+    }
+
+    for (size_t i = 0; i < tx->outCount; i++) {
+        BRTransactionAddOutput(cpy, tx->outputs[i].amount, tx->outputs[i].script, tx->outputs[i].scriptLen);
+    }
+
+    return cpy;
+}
+
 // buf must contain a serialized tx
 // retruns a transaction that must be freed by calling BRTransactionFree()
 BRTransaction *BRTransactionParse(const uint8_t *buf, size_t bufLen)

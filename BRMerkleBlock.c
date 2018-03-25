@@ -84,6 +84,18 @@ BRMerkleBlock *BRMerkleBlockNew(void)
     return block;
 }
 
+BRMerkleBlock *BRMerkleBlockCopy(const BRMerkleBlock *block)
+{
+    BRMerkleBlock *cpy = BRMerkleBlockNew();
+
+    assert(block != NULL);
+    *cpy = *block;
+    cpy->hashes = NULL;
+    cpy->flags = NULL;
+    BRMerkleBlockSetTxHashes(cpy, block->hashes, block->hashesCount, block->flags, block->flagsLen);
+    return cpy;
+}
+
 // buf must contain either a serialized merkleblock or header
 // returns a merkle block struct that must be freed by calling BRMerkleBlockFree()
 BRMerkleBlock *BRMerkleBlockParse(const uint8_t *buf, size_t bufLen)

@@ -283,6 +283,6 @@ JNIEXPORT jlong
 JNICALL Java_com_weywallet_core_BRCorePeer_createJniCorePeerMagic
         (JNIEnv *env, jclass thisClass,
          jlong magicNumber) {
-    BRPeer *result = BRPeerNew((uint32_t) magicNumber);
+    BRPeer *result = BRPeerNew();
     return (jlong) result;
 }

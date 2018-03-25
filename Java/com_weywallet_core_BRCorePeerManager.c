@@ -97,7 +97,6 @@ JNIEXPORT jboolean JNICALL Java_com_weywallet_core_BRCorePeerManager_jniUseFixed
          jstring nodeString,
          jint port) {
     BRPeerManager *peerManager = (BRPeerManager *) getJNIReference(env, thisObject);
-    const BRChainParams *chainParams = BRPeerManagerChainParams(peerManager);
 
     const char *host = (*env)->GetStringUTFChars(env, nodeString, NULL);
 
@@ -109,7 +108,7 @@ JNIEXPORT jboolean JNICALL Java_com_weywallet_core_BRCorePeerManager_jniUseFixed
         if (inet_pton(AF_INET, host, &addr) != 1) return JNI_FALSE;
         address.u16[5] = 0xffff;
         address.u32[3] = addr.s_addr;
-        if (port == 0) _port = chainParams->standardPort;
+        if (port == 0) _port = 11526; //TODO: De-hardcode this
     } else {
         _port = 0;
     }
@@ -378,7 +377,7 @@ Java_com_weywallet_core_BRCorePeerManager_createCorePeerManager
         (*env)->DeleteLocalRef (env, objPeer);
     }
 
-    BRPeerManager *result = BRPeerManagerNew(params, wallet, earliestKeyTime,
+    BRPeerManager *result = BRPeerManagerNew(wallet, earliestKeyTime,
                                              blocks, blocksCount,
                                              peers, peersCount);
 

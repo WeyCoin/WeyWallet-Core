@@ -1023,7 +1023,7 @@ void BRLyra2REv2(const char* input, char* output) {
     lyra2re2_hash(input, output);
 }
 
-UInt256 BRLyra2REv2_old(const char* input, char* output) {
+/*UInt256 BRLyra2REv2_old(const char* input, char* output) {
     
     sph_blake256_context ctx_blake;
     sph_cubehash256_context ctx_cubehash;
@@ -1069,4 +1069,4 @@ UInt256 BRLyra2REv2_old(const char* input, char* output) {
     
     return hash[0];
 
-}
+}*/
